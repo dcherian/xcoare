@@ -1,9 +1,104 @@
 import numpy as np
-from numpy import NaN, atan, exp, isnan, log, ones, pi, sin, sqrt, zeros
+from numpy import NaN
+from numpy import arctan as atan
+from numpy import exp, isnan, log, ones, pi, sin, sqrt, zeros
+
+import xarray as xr
+
+
+def xcoare35(
+    u,
+    zu,
+    t,
+    zt,
+    rh,
+    zq,
+    P,
+    ts,
+    Rs,
+    Rl,
+    lat,
+    zi,
+    rain=np.nan,
+    cp=np.nan,
+    sigH=np.nan,
+    jcool=True,
+    axis=None,
+):
+
+    names = [
+        "usr",
+        "tau",
+        "hsb",
+        "hlb",
+        "hbb",
+        "hsbb",
+        "hlwebb",
+        "tsr",
+        "qsr",
+        "zot",
+        "zoq",
+        "Cd",
+        "Ch",
+        "Ce",
+        "L",
+        "zet",
+        "dter",
+        "dqer",
+        "tkt",
+        "Urf",
+        "Trf",
+        "Qrf",
+        "RHrf",
+        "UrfN",
+        "Rnl",
+        "Le",
+        "rhoa",
+        "UN",
+        "U10",
+        "U10N",
+        "Cdn_10",
+        "Chn_10",
+        "Cen_10",
+        "RF",
+        "Qs",
+        "Evap",
+        "T10",
+        "Q10",
+        "RH10",
+    ]
+
+    calc = coare35vn(
+        u, zu, t, zt, rh, zq, P, ts, Rs, Rl, lat, zi, rain, cp, sigH, jcool, axis
+    )
+    A = xr.Dataset()
+    dims = u.dims
+    for name, var in zip(names, calc):
+        A[name] = (dims, var.squeeze())
+
+    for dim in u.dims:
+        A[dim] = u[dim]
+    return A
 
 
 def coare35vn(
-    u, zu, t, zt, rh, zq, P, ts, Rs, Rl, lat, zi, rain, cp=None, sigH=None, jcool=True
+    u,
+    zu,
+    t,
+    zt,
+    rh,
+    zq,
+    P,
+    ts,
+    Rs,
+    Rl,
+    lat,
+    zi,
+    rain=np.nan,
+    cp=np.nan,
+    sigH=np.nan,
+    jcool=True,
+    axis=None,
 ):
     """
     Vectorized version of COARE 3 code (Fairall et al, 2003) with
@@ -153,42 +248,44 @@ def coare35vn(
 
     jcool = int(jcool)  # code expects int
 
-    N = len(u)
+    if axis is None:
+        axis = 1
+    N = u.shape[axis]
 
     # set local variables to default values if input is NaN
-    if isnan(P):
-        P = 1013 * ones((N, 1))
+    if isnan(P).all():
+        P = 1013 * ones((1, N))
         # print P
 
     # pressure
-    if isnan(Rs):
-        Rs = 150 * ones((N, 1))
+    if isnan(Rs).all():
+        Rs = 150 * ones((1, N))
         # print Rs
 
     # incident shortwave radiation
-    if isnan(Rl):
-        Rl = 370 * ones((N, 1))
+    if isnan(Rl).all():
+        Rl = 370 * ones((1, N))
         # print Rl
 
     # incident longwave radiation
-    if isnan(lat):
+    if isnan(lat).all():
         lat = 45
         # print lat
 
     # latitude
-    if isnan(zi):
+    if isnan(zi).all():
         zi = 600
         # print zi
 
     # PBL height
     waveage = True
     seastate = True
-    if isnan(cp[0]):
-        cp = ones((N, 1)) * NaN
+    if isnan(cp[0]).all():
+        cp = ones((1, N)) * NaN
         waveage = False
 
     if isnan(sigH[0]):
-        sigH = ones((N, 1)) * NaN
+        sigH = ones((1, N)) * NaN
         seastate = False
 
     if waveage and seastate:
@@ -285,14 +382,14 @@ def coare35vn(
     qsr = (
         -(dq - wetc * dter * jcool) * von * fdg / (log(zq / zot10) - psit_26(zq / L10))
     )
-    tkt = 0.001 * ones((N, 1))
+    tkt = 0.001 * ones((1, N))
 
     # **********************************************************
     #  The following gives the new formulation for the
     #  Charnock variable
     # **********************************************************
 
-    charnC = 0.011 * ones((N, 1))
+    charnC = 0.011 * ones((1, N))
     umax = 19
     a1 = 0.0017
     a2 = -0.0050
@@ -311,7 +408,7 @@ def coare35vn(
     zoS = sigH * Ad * (usr / cp) ** Bd
     charnS = zoS * grav / usr / usr
 
-    charn = 0.011 * ones((N, 1))
+    charn = 0.011 * ones((1, N))
     k = np.nonzero(ut > 10)
     charn[k] = 0.011 + (ut[k] - 10) / (18 - 10) * (0.018 - 0.011)
     del k
@@ -340,8 +437,8 @@ def coare35vn(
         L = zu / zet
         zo = charn * usr ** 2.0 / grav + 0.11 * visa / usr  # surface roughness
         rr = zo * usr / visa
-        zoq = min(
-            1.6e-4, 5.8e-5 / rr ** 0.72
+        zoq = np.clip(
+            5.8e-5 / rr ** 0.72, a_min=None, a_max=1.6e-4
         )  # These thermal roughness lens give Stanton and
         zot = zoq  # Dalton numbers that closely approximate COARE 3.0
         cdhf = von / (log(zu / zo) - psiu_26(zu / L))
@@ -353,7 +450,7 @@ def coare35vn(
         tvsr = tsr + 0.61 * ta * qsr
         tssr = tsr + 0.51 * ta * qsr
         Bf = -grav / ta * usr * tvsr
-        ug = 0.2 * ones((N, 1))
+        ug = 0.2 * ones((1, N))
         k = np.nonzero(Bf > 0)
         if len(zi) == 1:
             ug[k] = Beta * (Bf[k] * zi) ** 0.333
@@ -371,8 +468,8 @@ def coare35vn(
         dels = Rns * (0.065 + 11 * tkt - 6.6e-5 / tkt * (1 - exp(-tkt / 8.0e-4)))
         qcol = qout - dels
         alq = Al * qcol + be * hlb * cpw / Le
-        xlamx = 6.0 * ones((N, 1))
-        tkt = min(0.01, xlamx * visw / (sqrt(rhoa / rhow) * usr))
+        xlamx = 6.0 * ones((1, N))
+        tkt = np.clip(xlamx * visw / (sqrt(rhoa / rhow) * usr), a_min=None, a_max=0.01)
         k = np.nonzero(alq > 0)
         xlamx[k] = 6.0 / (1 + (bigc[k] * alq[k] / usr[k] ** 4) ** 0.75) ** 0.333
         # print xlamx
@@ -428,7 +525,7 @@ def coare35vn(
     Evap = 1000 * hlb / Le / 1000 * 3600  # mm/hour
 
     # *****  compute transfer coeffs relative to ut @ meas. ht  ********************
-    Cd = tau / rhoa / ut / max(0.1, du)
+    Cd = tau / rhoa / ut / np.clip(du, a_min=0.1, a_max=None)
     Ch = -usr * tsr / ut / (dt - dter * jcool)
     Ce = -usr * qsr / (dq - dqer * jcool) / ut
 
@@ -473,7 +570,7 @@ def coare35vn(
     UrfN2 = usr / von / gf * log(zrf_u / zo)
 
     # ******** rain heat flux (save to use if desired) *****************************
-    if isnan(rain[0]):
+    if isnan(rain[0, 0]):
         RF = zeros(usr.shape)
     else:
         dwat = 2.11e-5 * ((t + tdk) / tdk) ** 1.94  #! water vapour diffusivity
@@ -526,55 +623,54 @@ def coare35vn(
 
     # ****************  output  ****************************************************
 
-    # A = mcat(
-    #     [
-    #         usr,
-    #         tau,
-    #         hsb,
-    #         hlb,
-    #         hbb,
-    #         hsbb,
-    #         hlwebb,
-    #         tsr,
-    #         qsr,
-    #         zot,
-    #         zoq,
-    #         Cd,
-    #         Ch,
-    #         Ce,
-    #         L,
-    #         zet,
-    #         dter,
-    #         dqer,
-    #         tkt,
-    #         Urf,
-    #         Trf,
-    #         Qrf,
-    #         RHrf,
-    #         UrfN,
-    #         Rnl,
-    #         Le,
-    #         rhoa,
-    #         UN,
-    #         U10,
-    #         U10N,
-    #         Cdn_10,
-    #         Chn_10,
-    #         Cen_10,
-    #         RF,
-    #         Qs,
-    #         Evap,
-    #         T10,
-    #         Q10,
-    #         RH10,
-    #     ]
-    # )
+    return [
+        usr,
+        tau,
+        hsb,
+        hlb,
+        hbb,
+        hsbb,
+        hlwebb,
+        tsr,
+        qsr,
+        zot,
+        zoq,
+        Cd,
+        Ch,
+        Ce,
+        L,
+        zet,
+        dter,
+        dqer,
+        tkt,
+        Urf,
+        Trf,
+        Qrf,
+        RHrf,
+        UrfN,
+        Rnl,
+        Le,
+        rhoa,
+        UN,
+        U10,
+        U10N,
+        Cdn_10,
+        Chn_10,
+        Cen_10,
+        RF,
+        Qs,
+        Evap,
+        T10,
+        Q10,
+        RH10,
+    ]
+
     # #   1   2   3   4   5   6    7      8   9  10  11  12 13 14 15 16   17   18   19  20  21  22  23   24   25 26  27  28  29  30    31     32     33   34 35  36  37  38   39
 
 
 def psit_26(zet=None):
     # computes temperature structure function
-    dzet = min(50, 0.35 * zet)  # stable
+    dzet = np.clip(0.35 * zet, a_min=None, a_max=50)  # stable
     psi = -((1 + 0.6667 * zet) ** 1.5 + 0.6667 * (zet - 14.28) * exp(-dzet) + 8.525)
     k = np.nonzero(zet < 0)  # unstable
     x = (1 - 15 * zet[k]) ** 0.5
@@ -592,7 +688,8 @@ def psit_26(zet=None):
 
 def psiu_26(zet=None):
     # computes velocity structure function
-    dzet = min(50, 0.35 * zet)  # stable
+    dzet = np.clip(0.35 * zet, a_min=None, a_max=50)  # stable
+
     a = 0.7
     b = 3 / 4
     c = 5
@@ -614,7 +711,7 @@ def psiu_26(zet=None):
 
 def psiu_40(zet=None):
     # computes velocity structure function
-    dzet = min(50, 0.35 * zet)  # stable
+    dzet = np.clip(0.35 * zet, a_min=None, a_max=50)  # stable
     a = 1
     b = 3 / 4
     c = 5
