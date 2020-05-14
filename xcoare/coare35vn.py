@@ -180,15 +180,15 @@ def coare35vn(
         # print zi
 
     # PBL height
-    waveage = 1
-    seastate = 1
+    waveage = True
+    seastate = True
     if isnan(cp(1)):
         cp = ones(N, 1) * NaN
-        waveage = 0
+        waveage = False
 
     if isnan(sigH(1)):
         sigH = ones(N, 1) * NaN
-        seastate = 0
+        seastate = False
 
     if waveage and seastate:
         print("Using seastate depent parameterization")
