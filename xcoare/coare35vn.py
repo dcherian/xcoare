@@ -6,26 +6,7 @@ from numpy import exp, isnan, log, ones, pi, sin, sqrt, zeros
 import xarray as xr
 
 
-def xcoare35(
-    u,
-    zu,
-    t,
-    zt,
-    rh,
-    zq,
-    P,
-    ts,
-    Rs,
-    Rl,
-    lat,
-    zi,
-    rain=np.nan,
-    cp=np.nan,
-    sigH=np.nan,
-    jcool=True,
-    axis=None,
-):
-
+def output_to_xr(calc, example_da):
     names = [
         "usr",
         "tau",
@@ -68,17 +49,41 @@ def xcoare35(
         "RH10",
     ]
 
-    calc = coare35vn(
-        u, zu, t, zt, rh, zq, P, ts, Rs, Rl, lat, zi, rain, cp, sigH, jcool, axis
-    )
     A = xr.Dataset()
-    dims = u.dims
+    dims = example_da.dims
     for name, var in zip(names, calc):
         A[name] = (dims, var.squeeze())
 
-    for dim in u.dims:
-        A[dim] = u[dim]
+    for dim in example_da.dims:
+        A[dim] = example_da[dim]
     return A
+
+
+def xcoare35(
+    u,
+    zu,
+    t,
+    zt,
+    rh,
+    zq,
+    P,
+    ts,
+    Rs,
+    Rl,
+    lat,
+    zi,
+    rain=np.nan,
+    cp=np.nan,
+    sigH=np.nan,
+    jcool=True,
+    axis=None,
+):
+
+    calc = coare35vn(
+        u, zu, t, zt, rh, zq, P, ts, Rs, Rl, lat, zi, rain, cp, sigH, jcool, axis
+    )
+
+    return output_to_xr(calc, u)
 
 
 def coare35vn(
