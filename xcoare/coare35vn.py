@@ -5,111 +5,113 @@ from numpy import NaN, atan, exp, isnan, log, ones, pi, sin, sqrt, zeros
 def coare35vn(
     u, zu, t, zt, rh, zq, P, ts, Rs, Rl, lat, zi, rain, cp=None, sigH=None, jcool=True
 ):
-    #
-    # Vectorized version of COARE 3 code (Fairall et al, 2003) with
-    # modification based on the CLIMODE, MBL and CBLAST experiments
-    # (Edson et al., 2012). The cool skin option is retained but warm layer
-    # and surface wave options removed.
-    #
-    # This version include parameterizations using wave height and wave
-    # slope using cp and sigH.  If these are set to NaN, then the wind
-    # speed depent formulation is used.
-    #
-    # ********************************************************************
-    # An important component of this code is whether the inputed ts
-    # represents the skin temperature of a near surface temperature.
-    # How this variable is treated is determined by the jcool parameter:
-    # set jcool=1 if Ts is bulk ocean temperature (default),
-    #     jcool=0 if Ts is true ocean skin temperature.
-    # ********************************************************************
+    """
+    Vectorized version of COARE 3 code (Fairall et al, 2003) with
+    modification based on the CLIMODE, MBL and CBLAST experiments
+    (Edson et al., 2012). The cool skin option is retained but warm layer
+    and surface wave options removed.
 
-    jcool = int(jcool)  # code expects int
+    This version include parameterizations using wave height and wave
+    slope using cp and sigH.  If these are set to NaN, then the wind
+    speed depent formulation is used.
 
-    # The code assumes u,t,rh,ts are vectors;
-    # sensor heights zu,zt,zl, latitude lat, and PBL height zi are constants;
-    # air pressure P and radiation Rs,Rl may be vectors or constants.
-    # Default values are assigned for P,Rs,Rl,lat,and zi if these data are not
-    # available.  Input NaNs to indicate no data. Defaults should be set to
-    # representative regional values if possible.
-    #
-    # Input:
-    #
-    #     u = relative wind speed (m/s) at height zu(m)
-    #     t = bulk air temperature (degC) at height zt(m)
-    #    rh = relative humidity (%) at height zq(m)
-    #     P = surface air pressure (mb) (default = 1015)
-    #    ts = water temperature (degC) see jcool below
-    #    Rs = downward shortwave radiation (W/m^2) (default = 150)
-    #    Rl = downward longwave radiation (W/m^2) (default = 370)
-    #   lat = latitude (default = +45 N)
-    #    zi = PBL height (m) (default = 600m)
-    #  rain = rain rate (mm/hr)
-    #    cp = phase speed of dominant waves (m/s)
-    #  sigH =  significant wave height (m)
-    #
-    # The user controls the output.  This is currently set as:
-    #
-    # Output:  A=[usr tau hsb hlb hbb hsbb tsr qsr zot zoq Cd Ch Ce  L zet dter dqer tkt Urf Trf Qrf RHrf UrfN Rnl Le rhoa UN U10 U10N Cdn_10 Chn_10 Cen_10];
-    #              1   2   3   4   5   6    7   8   9   10  1  2 3   4  5   6    7    8   9   20  1   2  3   4   5   6   7   8   9  30
-    #  where
-    #
-    #   usr = friction velocity that includes gustiness (m/s)
-    #   tau = wind stress (N/m^2)
-    #   hsb = sensible heat flux into ocean (W/m^2)
-    #   hlb = latent heat flux into ocean (W/m^2)
-    #   hbb = buoyany flux into ocean (W/m^2)
-    #   hsbb = "sonic" buoyancy flux measured directly by sonic anemometer
-    #   hlWebb= Webb correction for latent heat flux, add this to directly measured eddy covariance latent heat flux using water vapor mass concentration sensors.
-    #   tsr = temperature scaling parameter (K)
-    #   qsr = specific humidity scaling parameter (g/Kg)
-    #   zot = thermal roughness len (m)
-    #   zoq = moisture roughness len (m)
-    #   Cd = wind stress transfer (drag) coefficient at height zu
-    #   Ch = sensible heat transfer coefficient (Stanton number) at height zu
-    #   Ce = latent heat transfer coefficient (Dalton number) at height zu
-    #    L = Obukhov len scale (m)
-    #  zet = Monin-Obukhov stability parameter zu/L
-    # dter = cool-skin temperature depression (degC)
-    # dqer = cool-skin humidity depression (degC)
-    #  tkt = cool-skin thickness (m)
-    #  Urf = wind speed at reference height (user can select height below)
-    #  Tfr = temperature at reference height
-    #  Qfr = specific humidity at reference height
-    # RHfr = relative humidity at reference height
-    # UrfN = neutral value of wind speed at reference height
-    #  Rnl = Upwelling IR radiation computed by COARE
-    #   Le = latent heat of vaporization
-    # rhoa = density of air
-    #   UN = neutral value of wind speed at zu
-    #  U10 = wind speed adjusted to 10 m
-    # UN10 = neutral value of wind speed at 10m
-    # Cdn_10 = neutral value of drag coefficient at 10m
-    # Chn_10 = neutral value of Stanton number at 10m
-    # Cen_10 = neutral value of Dalton number at 10m
-    #
+    ********************************************************************
+    An important component of this code is whether the inputed ts
+    represents the skin temperature of a near surface temperature.
+    How this variable is treated is determined by the jcool parameter:
+    set jcool=1 if Ts is bulk ocean temperature (default),
+        jcool=0 if Ts is true ocean skin temperature.
+    ********************************************************************
 
-    # Notes: 1) u is the relative wind speed, i.e., the magnitude of the
-    #           difference between the wind (at zu) and ocean surface current
-    #           vectors.
-    #        2) Set jcool=0 in code if ts is true surface skin temperature,
-    #           otherwise ts is assumed the bulk temperature and jcool=1.
-    #        3) Set P=NaN to assign default value if no air pressure data
-    #           available.
-    #        4) Set Rs=NaN, Rl=NaN if no radiation data available.  This assigns
-    #           default values to Rs, Rl so that cool skin option can be applied.
-    #        5) Set lat=NaN and/or zi=NaN to assign default values if latitude
-    #           and/or PBL height not given.
-    #        6) The code to compute the heat flux caused by precipitation is
-    #           included if rain data is available (default is no rain).
-    #        7) Code updates the cool-skin temperature depression dter and thickness
-    #           tkt during iteration loop for consistency.
-    #        8) Number of iterations set to nits = 6.
+    The code assumes u,t,rh,ts are vectors;
+    sensor heights zu,zt,zl, latitude lat, and PBL height zi are constants;
+    air pressure P and radiation Rs,Rl may be vectors or constants.
+    Default values are assigned for P,Rs,Rl,lat,and zi if these data are not
+    available.  Input NaNs to indicate no data. Defaults should be set to
+    representative regional values if possible.
 
-    # Reference:
-    #
-    #  Fairall, C.W., E.F. Bradley, J.E. Hare, A.A. Grachev, and J.B. Edson (2003),
-    #  Bulk parameterization of air sea fluxes: updates and verification for the
-    #  COARE algorithm, J. Climate, 16, 571-590.
+    Parameters
+    ----------
+        u = relative wind speed (m/s) at height zu(m)
+        t = bulk air temperature (degC) at height zt(m)
+       rh = relative humidity (%) at height zq(m)
+        P = surface air pressure (mb) (default = 1015)
+       ts = water temperature (degC) see jcool below
+       Rs = downward shortwave radiation (W/m^2) (default = 150)
+       Rl = downward longwave radiation (W/m^2) (default = 370)
+      lat = latitude (default = +45 N)
+       zi = PBL height (m) (default = 600m)
+     rain = rain rate (mm/hr)
+       cp = phase speed of dominant waves (m/s)
+     sigH =  significant wave height (m)
+
+    The user controls the output.  This is currently set as:
+
+    Output
+    ------
+             A=[usr tau hsb hlb hbb hsbb tsr qsr zot zoq Cd Ch Ce  L zet dter dqer tkt Urf Trf Qrf RHrf UrfN Rnl Le rhoa UN U10 U10N Cdn_10 Chn_10 Cen_10];
+                 1   2   3   4   5   6    7   8   9   10  1  2 3   4  5   6    7    8   9   20  1   2  3   4   5   6   7   8   9  30
+     where
+      usr = friction velocity that includes gustiness (m/s)
+      tau = wind stress (N/m^2)
+      hsb = sensible heat flux into ocean (W/m^2)
+      hlb = latent heat flux into ocean (W/m^2)
+      hbb = buoyany flux into ocean (W/m^2)
+      hsbb = "sonic" buoyancy flux measured directly by sonic anemometer
+      hlWebb= Webb correction for latent heat flux, add this to directly measured eddy covariance latent heat flux using water vapor mass concentration sensors.
+      tsr = temperature scaling parameter (K)
+      qsr = specific humidity scaling parameter (g/Kg)
+      zot = thermal roughness len (m)
+      zoq = moisture roughness len (m)
+      Cd = wind stress transfer (drag) coefficient at height zu
+      Ch = sensible heat transfer coefficient (Stanton number) at height zu
+      Ce = latent heat transfer coefficient (Dalton number) at height zu
+       L = Obukhov len scale (m)
+     zet = Monin-Obukhov stability parameter zu/L
+    dter = cool-skin temperature depression (degC)
+    dqer = cool-skin humidity depression (degC)
+     tkt = cool-skin thickness (m)
+     Urf = wind speed at reference height (user can select height below)
+     Tfr = temperature at reference height
+     Qfr = specific humidity at reference height
+    RHfr = relative humidity at reference height
+    UrfN = neutral value of wind speed at reference height
+     Rnl = Upwelling IR radiation computed by COARE
+      Le = latent heat of vaporization
+    rhoa = density of air
+      UN = neutral value of wind speed at zu
+     U10 = wind speed adjusted to 10 m
+    UN10 = neutral value of wind speed at 10m
+    Cdn_10 = neutral value of drag coefficient at 10m
+    Chn_10 = neutral value of Stanton number at 10m
+    Cen_10 = neutral value of Dalton number at 10m
+
+    Notes
+    -----
+    1) u is the relative wind speed, i.e., the magnitude of the
+      difference between the wind (at zu) and ocean surface current
+      vectors.
+    2) Set jcool=0 in code if ts is true surface skin temperature,
+      otherwise ts is assumed the bulk temperature and jcool=1.
+    3) Set P=NaN to assign default value if no air pressure data
+      available.
+    4) Set Rs=NaN, Rl=NaN if no radiation data available.  This assigns
+      default values to Rs, Rl so that cool skin option can be applied.
+    5) Set lat=NaN and/or zi=NaN to assign default values if latitude
+      and/or PBL height not given.
+    6) The code to compute the heat flux caused by precipitation is
+      included if rain data is available (default is no rain).
+    7) Code updates the cool-skin temperature depression dter and thickness
+      tkt during iteration loop for consistency.
+    8) Number of iterations set to nits = 6.
+
+    References
+    ----------
+
+    Fairall, C.W., E.F. Bradley, J.E. Hare, A.A. Grachev, and J.B. Edson (2003),
+    Bulk parameterization of air sea fluxes: updates and verification for the
+    COARE algorithm, J. Climate, 16, 571-590.
+    """
 
     # Code history:
     #
@@ -147,6 +149,8 @@ def coare35vn(
     # sigH = sigH([:])
 
     # rain = rain([:])
+
+    jcool = int(jcool)  # code expects int
 
     N = len(u)
 
