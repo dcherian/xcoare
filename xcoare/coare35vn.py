@@ -266,11 +266,11 @@ def coare35vn(
     k50 = np.nonzero(zetu > 50)  # stable with very thin M-O len relative to zu
     k = np.nonzero(Ribu < 0)
     if len(Ribcu) == 1:
-        zetu(k).lvalue = CC(k) * Ribu(k) / (1 + Ribu(k) / Ribcu)
+        zetu[k] = CC[k] * Ribu[k] / (1 + Ribu[k] / Ribcu)
         del k
 
     else:
-        zetu(k).lvalue = CC(k) * Ribu(k) / (1 + Ribu(k) / Ribcu(k))
+        zetu[k] = CC[k] * Ribu[k] / (1 + Ribu[k] / Ribcu[k])
         del k
 
     L10 = zu / zetu
@@ -293,7 +293,7 @@ def coare35vn(
     a2 = -0.0050
     charnC = a1 * u10 + a2
     k = np.nonzero(u10 > umax)
-    charnC(k).lvalue = a1 * umax + a2
+    charnC[k] = a1 * umax + a2
 
     A = 0.114  # wave-age depent coefficients
     B = 0.622
@@ -308,11 +308,11 @@ def coare35vn(
 
     charn = 0.011 * ones(N, 1)
     k = np.nonzero(ut > 10)
-    charn(k).lvalue = 0.011 + (ut(k) - 10) / (18 - 10) * (0.018 - 0.011)
+    charn[k] = 0.011 + (ut[k] - 10) / (18 - 10) * (0.018 - 0.011)
     del k
 
     k = np.nonzero(ut > 18)
-    charn(k).lvalue = 0.018
+    charn[k] = 0.018
     # print charn
     del k
 
@@ -351,11 +351,11 @@ def coare35vn(
         ug = 0.2 * ones(N, 1)
         k = np.nonzero(Bf > 0)
         if len(zi) == 1:
-            ug(k).lvalue = Beta * (Bf(k) * zi) ** 0.333
+            ug[k] = Beta * (Bf[k] * zi) ** 0.333
             del k
 
         else:
-            ug(k).lvalue = Beta * (Bf(k) * zi(k)) ** 0.333
+            ug[k] = Beta * (Bf[k] * zi[k]) ** 0.333
             del k
 
         ut = sqrt(du ** 2 + ug ** 2)
@@ -369,48 +369,48 @@ def coare35vn(
         xlamx = 6.0 * ones(N, 1)
         tkt = min(0.01, xlamx * visw / (sqrt(rhoa / rhow) * usr))
         k = np.nonzero(alq > 0)
-        xlamx(k).lvalue = 6.0 / (1 + (bigc(k) * alq(k) / usr(k) ** 4) ** 0.75) ** 0.333
+        xlamx[k] = 6.0 / (1 + (bigc[k] * alq[k] / usr[k] ** 4) ** 0.75) ** 0.333
         # print xlamx
 
-        tkt(k).lvalue = xlamx(k) * visw / (sqrt(rhoa(k) / rhow) * usr(k))
+        tkt[k] = xlamx[k] * visw / (sqrt(rhoa[k] / rhow) * usr[k])
         del k
 
         dter = qcol * tkt / tcw
         dqer = wetc * dter
         Rnl = 0.97 * (5.67e-8 * (ts - dter * jcool + tdk) ** 4 - Rl)  # update dter
         if i == 0:  # save first iteration solution for case of zetu>50;
-            usr50 = usr(k50)
-            tsr50 = tsr(k50)
+            usr50 = usr[k50]
+            tsr50 = tsr[k50]
             # print tsr50
-            qsr50 = qsr(k50)
-            L50 = L(k50)
+            qsr50 = qsr[k50]
+            L50 = L[k50]
 
-            zet50 = zet(k50)
-            dter50 = dter(k50)
+            zet50 = zet[k50]
+            dter50 = dter[k50]
             # print dter50
-            dqer50 = dqer(k50)
-            tkt50 = tkt(k50)
+            dqer50 = dqer[k50]
+            tkt50 = tkt[k50]
 
         u10N = usr / von / gf * log(10.0 / zo)
         charnC = a1 * u10N + a2
         k = np.nonzero(u10N > umax)
-        charnC(k).lvalue = a1 * umax + a2
+        charnC[k] = a1 * umax + a2
         charnW = A * (usr / cp) ** B
         zoS = sigH * Ad * (usr / cp) ** Bd  # -0.11*visa./usr;
         charnS = zoS * grav / usr / usr
 
     # insert first iteration solution for case with zetu>50
-    usr(k50).lvalue = usr50
-    tsr(k50).lvalue = tsr50
+    usr[k50] = usr50
+    tsr[k50] = tsr50
     # print tsr
-    qsr(k50).lvalue = qsr50
-    L(k50).lvalue = L50
+    qsr[k50] = qsr50
+    L[k50] = L50
 
-    zet(k50).lvalue = zet50
-    dter(k50).lvalue = dter50
+    zet[k50] = zet50
+    dter[k50] = dter50
     # print dter
-    dqer(k50).lvalue = dqer50
-    tkt(k50).lvalue = tkt50
+    dqer[k50] = dqer50
+    tkt[k50] = tkt50
 
     # ****************  compute fluxes  ********************************************
     tau = rhoa * usr * usr / gf  # wind stress
@@ -572,16 +572,16 @@ def psit_26(zet=None):
     dzet = min(50, 0.35 * zet)  # stable
     psi = -((1 + 0.6667 * zet) ** 1.5 + 0.6667 * (zet - 14.28) * exp(-dzet) + 8.525)
     k = np.nonzero(zet < 0)  # unstable
-    x = (1 - 15 * zet(k)) ** 0.5
+    x = (1 - 15 * zet[k]) ** 0.5
     psik = 2 * log((1 + x) / 2)
-    x = (1 - 34.15 * zet(k)) ** 0.3333
+    x = (1 - 34.15 * zet[k]) ** 0.3333
     psic = (
         1.5 * log((1 + x + x ** 2) / 3)
         - sqrt(3) * atan((1 + 2 * x) / sqrt(3))
         + 4 * atan(1) / sqrt(3)
     )
-    f = zet(k) ** 2.0 / (1 + zet(k) ** 2)
-    psi(k).lvalue = (1 - f) * psik + f * psic
+    f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
+    psi[k] = (1 - f) * psik + f * psic
 
 
 def psiu_26(zet=None):
@@ -593,16 +593,16 @@ def psiu_26(zet=None):
     d = 0.35
     psi = -(a * zet + b * (zet - c / d) * exp(-dzet) + b * c / d)
     k = np.nonzero(zet < 0)  # unstable
-    x = (1 - 15 * zet(k)) ** 0.25
+    x = (1 - 15 * zet[k]) ** 0.25
     psik = 2 * log((1 + x) / 2) + log((1 + x * x) / 2) - 2 * atan(x) + 2 * atan(1)
-    x = (1 - 10.15 * zet(k)) ** 0.3333
+    x = (1 - 10.15 * zet[k]) ** 0.3333
     psic = (
         1.5 * log((1 + x + x ** 2) / 3)
         - sqrt(3) * atan((1 + 2 * x) / sqrt(3))
         + 4 * atan(1) / sqrt(3)
     )
-    f = zet(k) ** 2.0 / (1 + zet(k) ** 2)
-    psi(k).lvalue = (1 - f) * psik + f * psic
+    f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
+    psi[k] = (1 - f) * psik + f * psic
 
 
 def psiu_40(zet=None):
@@ -614,16 +614,16 @@ def psiu_40(zet=None):
     d = 0.35
     psi = -(a * zet + b * (zet - c / d) * exp(-dzet) + b * c / d)
     k = np.nonzero(zet < 0)  # unstable
-    x = (1 - 18 * zet(k)) ** 0.25
+    x = (1 - 18 * zet[k]) ** 0.25
     psik = 2 * log((1 + x) / 2) + log((1 + x * x) / 2) - 2 * atan(x) + 2 * atan(1)
-    x = (1 - 10 * zet(k)) ** 0.3333
+    x = (1 - 10 * zet[k]) ** 0.3333
     psic = (
         1.5 * log((1 + x + x ** 2) / 3)
         - sqrt(3) * atan((1 + 2 * x) / sqrt(3))
         + 4 * atan(1) / sqrt(3)
     )
-    f = zet(k) ** 2.0 / (1 + zet(k) ** 2)
-    psi(k).lvalue = (1 - f) * psik + f * psic
+    f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
+    psi[k] = (1 - f) * psik + f * psic
 
 
 def bucksat(T=None, P=None):
