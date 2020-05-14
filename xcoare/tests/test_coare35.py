@@ -1,5 +1,7 @@
-from scipy.io import loadmat
-from ..coare35 import xcoare35
+# from scipy.io import loadmat
+import xarray as xr
+
+from ..coare35vn import xcoare35
 
 # rev = loadmat("/home/deepak/work/coare3_6/Revelle10minutesLeg3_r3.mat", squeeze_me=True)
 # mat = loadmat("/home/deepak/work/coare3_6/revelle_35.mat", squeeze_me=True)['A35']
@@ -15,8 +17,8 @@ from ..coare35 import xcoare35
 
 
 def test_35():
-    revds = xr.open_dataset("tests/Revelle10minutesLeg3_r3.nc")
-    expected = xr.open_dataset("tests/expected_revelle_35.nc")
+    revds = xr.open_dataset("xcoare/tests/Revelle10minutesLeg3_r3.nc")
+    expected = xr.open_dataset("xcoare/tests/expected_revelle_35.nc")
 
     actual = xcoare35(
         revds["U10"],
