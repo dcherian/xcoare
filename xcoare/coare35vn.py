@@ -586,6 +586,7 @@ def psit_26(zet=None):
     )
     f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
     psi[k] = (1 - f) * psik + f * psic
+    return psi
 
 
 def psiu_26(zet=None):
@@ -607,6 +608,7 @@ def psiu_26(zet=None):
     )
     f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
     psi[k] = (1 - f) * psik + f * psic
+    return psi
 
 
 def psiu_40(zet=None):
@@ -628,12 +630,14 @@ def psiu_40(zet=None):
     )
     f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
     psi[k] = (1 - f) * psik + f * psic
+    return psi
 
 
 def bucksat(T=None, P=None):
     # computes saturation vapor pressure [mb]
     # given T [degC] and P [mb]
     exx = 6.1121 * exp(17.502 * T / (T + 240.97)) * (1.0007 + 3.46e-6 * P)
+    return exx
 
 
 def qsat26sea(T=None, P=None):
@@ -642,6 +646,7 @@ def qsat26sea(T=None, P=None):
     ex = bucksat(T, P)
     es = 0.98 * ex  # reduction at sea surface
     qs = 622 * es / (P - 0.378 * es)
+    return qs
 
 
 def qsat26air(T=None, P=None, rh=None):
@@ -650,6 +655,7 @@ def qsat26air(T=None, P=None, rh=None):
     es = bucksat(T, P)
     em = 0.01 * rh * es
     q = 622 * em / (P - 0.378 * em)
+    return q, em
 
 
 def grv(lat=None):
@@ -662,6 +668,7 @@ def grv(lat=None):
     phi = lat * pi / 180
     x = sin(phi)
     g = gamma * (1 + c1 * x ** 2 + c2 * x ** 4 + c3 * x ** 6 + c4 * x ** 8)
+    return g
 
 
 def RHcalc(T=None, P=None, Q=None):
@@ -670,3 +677,4 @@ def RHcalc(T=None, P=None, Q=None):
     es = 6.1121 * exp(17.502 * T / (T + 240.97)) * (1.0007 + 3.46e-6 * P)
     em = Q * P / (0.378 * Q + 0.622)
     RHrf = 100 * em / es
+    return RHrf
