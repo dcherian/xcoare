@@ -128,27 +128,28 @@ def coare35vn(
     # -----------------------------------------------------------------------
 
     # convert input to column vectors
-    # u = u([:])
-    # t = t([:])
-    # # print t
-    # rh = rh([:])
-    # P = P([:])
-    # ts = ts([:])
 
-    # Rs = Rs([:])
-    # Rl = Rl([:])
-    # # print Rl
-    # lat = lat([:])
-    # zi = zi([:])
+    u = np.atleast_2d(u)
+    t = np.atleast_2d(t)
+    # print t
+    rh = np.atleast_2d(rh)
+    P = np.atleast_2d(P)
+    ts = np.atleast_2d(ts)
 
-    # zu = zu([:])
-    # zt = zt([:])
-    # # print zt
-    # zq = zq([:])
-    # cp = cp([:])
-    # sigH = sigH([:])
+    Rs = np.atleast_2d(Rs)
+    Rl = np.atleast_2d(Rl)
+    # print Rl
+    lat = np.atleast_2d(lat)
+    zi = np.atleast_2d(zi)
 
-    # rain = rain([:])
+    zu = np.atleast_2d(zu)
+    zt = np.atleast_2d(zt)
+    # print zt
+    zq = np.atleast_2d(zq)
+    cp = np.atleast_2d(cp)
+    sigH = np.atleast_2d(sigH)
+
+    rain = np.atleast_2d(rain)
 
     jcool = int(jcool)  # code expects int
 
@@ -156,17 +157,17 @@ def coare35vn(
 
     # set local variables to default values if input is NaN
     if isnan(P):
-        P = 1013 * ones(N, 1)
+        P = 1013 * ones((N, 1))
         # print P
 
     # pressure
     if isnan(Rs):
-        Rs = 150 * ones(N, 1)
+        Rs = 150 * ones((N, 1))
         # print Rs
 
     # incident shortwave radiation
     if isnan(Rl):
-        Rl = 370 * ones(N, 1)
+        Rl = 370 * ones((N, 1))
         # print Rl
 
     # incident longwave radiation
@@ -182,12 +183,12 @@ def coare35vn(
     # PBL height
     waveage = True
     seastate = True
-    if isnan(cp(1)):
-        cp = ones(N, 1) * NaN
+    if isnan(cp[0]):
+        cp = ones((N, 1)) * NaN
         waveage = False
 
-    if isnan(sigH(1)):
-        sigH = ones(N, 1) * NaN
+    if isnan(sigH[0]):
+        sigH = ones((N, 1)) * NaN
         seastate = False
 
     if waveage and seastate:
@@ -284,14 +285,14 @@ def coare35vn(
     qsr = (
         -(dq - wetc * dter * jcool) * von * fdg / (log(zq / zot10) - psit_26(zq / L10))
     )
-    tkt = 0.001 * ones(N, 1)
+    tkt = 0.001 * ones((N, 1))
 
     # **********************************************************
     #  The following gives the new formulation for the
     #  Charnock variable
     # **********************************************************
 
-    charnC = 0.011 * ones(N, 1)
+    charnC = 0.011 * ones((N, 1))
     umax = 19
     a1 = 0.0017
     a2 = -0.0050
@@ -310,7 +311,7 @@ def coare35vn(
     zoS = sigH * Ad * (usr / cp) ** Bd
     charnS = zoS * grav / usr / usr
 
-    charn = 0.011 * ones(N, 1)
+    charn = 0.011 * ones((N, 1))
     k = np.nonzero(ut > 10)
     charn[k] = 0.011 + (ut[k] - 10) / (18 - 10) * (0.018 - 0.011)
     del k
@@ -352,7 +353,7 @@ def coare35vn(
         tvsr = tsr + 0.61 * ta * qsr
         tssr = tsr + 0.51 * ta * qsr
         Bf = -grav / ta * usr * tvsr
-        ug = 0.2 * ones(N, 1)
+        ug = 0.2 * ones((N, 1))
         k = np.nonzero(Bf > 0)
         if len(zi) == 1:
             ug[k] = Beta * (Bf[k] * zi) ** 0.333
@@ -370,7 +371,7 @@ def coare35vn(
         dels = Rns * (0.065 + 11 * tkt - 6.6e-5 / tkt * (1 - exp(-tkt / 8.0e-4)))
         qcol = qout - dels
         alq = Al * qcol + be * hlb * cpw / Le
-        xlamx = 6.0 * ones(N, 1)
+        xlamx = 6.0 * ones((N, 1))
         tkt = min(0.01, xlamx * visw / (sqrt(rhoa / rhow) * usr))
         k = np.nonzero(alq > 0)
         xlamx[k] = 6.0 / (1 + (bigc[k] * alq[k] / usr[k] ** 4) ** 0.75) ** 0.333
@@ -472,7 +473,7 @@ def coare35vn(
     UrfN2 = usr / von / gf * log(zrf_u / zo)
 
     # ******** rain heat flux (save to use if desired) *****************************
-    if isnan(rain(1)):
+    if isnan(rain[0]):
         RF = zeros(usr.shape)
     else:
         dwat = 2.11e-5 * ((t + tdk) / tdk) ** 1.94  #! water vapour diffusivity
