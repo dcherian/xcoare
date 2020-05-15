@@ -1,9 +1,8 @@
 import numpy as np
+import xarray as xr
 from numpy import NaN
 from numpy import arctan as atan
 from numpy import exp, isnan, log, ones, pi, sin, sqrt, zeros
-
-import xarray as xr
 
 
 def output_to_xr(calc, example_da):
@@ -68,13 +67,13 @@ def xcoare35(
     zq,
     P,
     ts,
-    Rs,
-    Rl,
-    lat,
-    zi,
-    rain=np.nan,
-    cp=np.nan,
-    sigH=np.nan,
+    Rs=150,
+    Rl=370,
+    lat=45,
+    zi=600,
+    rain=None,
+    cp=None,
+    sigH=None,
     jcool=True,
     axis=None,
 ):
@@ -95,13 +94,13 @@ def coare35vn(
     zq,
     P,
     ts,
-    Rs,
-    Rl,
-    lat,
-    zi,
-    rain=np.nan,
-    cp=np.nan,
-    sigH=np.nan,
+    Rs=150,
+    Rl=370,
+    lat=45,
+    zi=600,
+    rain=None,
+    cp=None,
+    sigH=None,
     jcool=True,
     axis=None,
 ):
@@ -246,15 +245,10 @@ def coare35vn(
     zt = np.atleast_2d(zt)
     # print zt
     zq = np.atleast_2d(zq)
-    cp = np.atleast_2d(cp)
-    sigH = np.atleast_2d(sigH)
-
-    rain = np.atleast_2d(rain)
-
     jcool = int(jcool)  # code expects int
 
     if axis is None:
-        axis = 1
+        axis = np.argmax(u.shape)
     N = u.shape[axis]
 
     # set local variables to default values if input is NaN
@@ -262,34 +256,34 @@ def coare35vn(
         P = 1013 * ones((1, N))
         # print P
 
-    # pressure
-    if isnan(Rs).all():
-        Rs = 150 * ones((1, N))
-        # print Rs
+    # # pressure
+    # if isnan(Rs).all():
+    #     Rs = 150 * ones((1, N))
+    #     # print Rs
 
-    # incident shortwave radiation
-    if isnan(Rl).all():
-        Rl = 370 * ones((1, N))
-        # print Rl
+    # # incident shortwave radiation
+    # if isnan(Rl).all():
+    #     Rl = 370 * ones((1, N))
+    #     # print Rl
 
-    # incident longwave radiation
-    if isnan(lat).all():
-        lat = 45
-        # print lat
+    # # incident longwave radiation
+    # if isnan(lat).all():
+    #     lat = 45
+    #     # print lat
 
-    # latitude
-    if isnan(zi).all():
-        zi = 600
-        # print zi
+    # # latitude
+    # if isnan(zi).all():
+    #     zi = 600
+    #     # print zi
 
     # PBL height
     waveage = True
     seastate = True
-    if isnan(cp[0]).all():
+    if cp is None:
         cp = ones((1, N)) * NaN
         waveage = False
 
-    if isnan(sigH[0]):
+    if sigH is None:
         sigH = ones((1, N)) * NaN
         seastate = False
 
@@ -298,6 +292,10 @@ def coare35vn(
 
     if waveage and not seastate:
         print("Using waveage depent parameterization")
+
+    cp = np.atleast_2d(cp)
+    sigH = np.atleast_2d(sigH)
+    rain = np.atleast_2d(rain)
 
     # input variable u is assumed relative wind speed (magnitude of difference
     # between wind and surface current vectors). to follow orginal Fairall code, set
@@ -575,7 +573,7 @@ def coare35vn(
     UrfN2 = usr / von / gf * log(zrf_u / zo)
 
     # ******** rain heat flux (save to use if desired) *****************************
-    if isnan(rain[0, 0]):
+    if rain is None:
         RF = zeros(usr.shape)
     else:
         dwat = 2.11e-5 * ((t + tdk) / tdk) ** 1.94  #! water vapour diffusivity
