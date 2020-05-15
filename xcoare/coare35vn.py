@@ -508,10 +508,10 @@ def coare35vn(
         L = zu / zet
         zo = charn * usr ** 2.0 / grav + 0.11 * visa / usr  # surface roughness
         rr = zo * usr / visa
-        zoq = np.clip(
-            5.8e-5 / rr ** 0.72, a_min=None, a_max=1.6e-4
-        )  # These thermal roughness lens give Stanton and
-        zot = zoq  # Dalton numbers that closely approximate COARE 3.0
+        # These thermal roughness lens give Stanton and
+        # Dalton numbers that closely approximate COARE 3.0
+        zoq = np.clip(5.8e-5 / rr ** 0.72, None, 1.6e-4)
+        zot = zoq
         cdhf = von / (log(zu / zo) - psiu_26(zu / L))
         cqhf = von * fdg / (log(zq / zoq) - psit_26(zq / L))
         cthf = von * fdg / (log(zt / zot) - psit_26(zt / L))
@@ -596,7 +596,7 @@ def coare35vn(
     Evap = 1000 * hlb / Le / 1000 * 3600  # mm/hour
 
     # *****  compute transfer coeffs relative to ut @ meas. ht  ********************
-    Cd = tau / rhoa / ut / np.clip(du, a_min=0.1, a_max=None)
+    Cd = tau / rhoa / ut / np.clip(du, 0.1, None)
     Ch = -usr * tsr / ut / (dt - dter * jcool)
     Ce = -usr * qsr / (dq - dqer * jcool) / ut
 
@@ -744,7 +744,7 @@ def coare35vn(
 
 def psit_26(zet=None):
     # computes temperature structure function
-    dzet = np.clip(0.35 * zet, a_min=None, a_max=50)  # stable
+    dzet = np.clip(0.35 * zet, None, 50)  # stable
     psi = -((1 + 0.6667 * zet) ** 1.5 + 0.6667 * (zet - 14.28) * exp(-dzet) + 8.525)
     k = zet < 0  # unstable
     x = (1 - 15 * zet[k]) ** 0.5
@@ -762,7 +762,7 @@ def psit_26(zet=None):
 
 def psiu_26(zet=None):
     # computes velocity structure function
-    dzet = np.clip(0.35 * zet, a_min=None, a_max=50)  # stable
+    dzet = np.clip(0.35 * zet, None, 50)  # stable
 
     a = 0.7
     b = 3 / 4
@@ -785,7 +785,7 @@ def psiu_26(zet=None):
 
 def psiu_40(zet=None):
     # computes velocity structure function
-    dzet = np.clip(0.35 * zet, a_min=None, a_max=50)  # stable
+    dzet = np.clip(0.35 * zet, None, 50)  # stable
     a = 1
     b = 3 / 4
     c = 5
