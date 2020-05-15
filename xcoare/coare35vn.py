@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 from numpy import NaN
 from numpy import arctan as atan
-from numpy import exp, isnan, log, ones, pi, sin, sqrt
+from numpy import exp, log, ones, pi, sin, sqrt
 
 names = [
     "usr",
@@ -52,7 +52,7 @@ attrs = dict(
     tau=("wind stress", "N/m^2"),
     hsb=("sensible heat flux into ocean", "W/m^2"),
     hlb=("latent heat flux into ocean", "W/m^2"),
-    hbb=("buoyany flux into ocean", "W/m^2"),
+    hbb=("buoyancy flux into ocean", "W/m^2"),
     hsbb=("buoyancy flux measured directly by sonic anemometer",),
     hlwebb=("Webb correction for latent heat flux",),
     tsr=("temperature scaling parameter", "K"),
