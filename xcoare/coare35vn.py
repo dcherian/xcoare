@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 from numpy import NaN
 from numpy import arctan as atan
-from numpy import exp, isnan, log, ones, pi, sin, sqrt, zeros
+from numpy import exp, isnan, log, ones, pi, sin, sqrt
 
 
 def output_to_xr(calc, example_da):
@@ -305,7 +305,7 @@ def coare35vn(
 
     # convert rh to specific humidity
     Qs = qsat26sea(ts, P) / 1000  # surface water specific humidity (g/kg)
-    [Q, Pv] = qsat26air(t, P, rh)  # specific humidity of air (g/kg)
+    Q, _ = qsat26air(t, P, rh)  # specific humidity of air (g/kg)
     Q = Q / 1000
 
     # ***********  set constants **********************************************
@@ -574,7 +574,7 @@ def coare35vn(
 
     # ******** rain heat flux (save to use if desired) *****************************
     if rain is None:
-        RF = zeros(usr.shape)
+        RF = 0 * usr
     else:
         dwat = 2.11e-5 * ((t + tdk) / tdk) ** 1.94  # water vapour diffusivity
         dtmp = (
