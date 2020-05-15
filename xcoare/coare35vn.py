@@ -4,6 +4,43 @@ from numpy import NaN
 from numpy import arctan as atan
 from numpy import exp, isnan, log, ones, pi, sin, sqrt
 
+# hlwebb: add this to directly measured eddy covariance latent heat flux using water vapor mass concentration sensors.
+attrs = dict(
+    usr=("friction velocity that includes gustiness", "m/s"),
+    tau=("wind stress", "N/m^2"),
+    hsb=("sensible heat flux into ocean", "W/m^2"),
+    hlb=("latent heat flux into ocean", "W/m^2"),
+    hbb=("buoyany flux into ocean", "W/m^2"),
+    hsbb=("buoyancy flux measured directly by sonic anemometer",),
+    hlWebb=("Webb correction for latent heat flux",),
+    tsr=("temperature scaling parameter", "K"),
+    qsr=("specific humidity scaling parameter", "g/kg"),
+    zot=("thermal roughness len", "m"),
+    zoq=("moisture roughness len", "m"),
+    Cd=("wind stress transfer (drag) coefficient at height zu",),
+    Ch=("sensible heat transfer coefficient (Stanton number) at height zu",),
+    Ce=("latent heat transfer coefficient (Dalton number) at height zu",),
+    L=("Obukhov len scale", "m"),
+    zet=("Monin-Obukhov stability parameter" "zu/L"),
+    dter=("cool-skin temperature depression", "degC"),
+    dqer=("cool-skin humidity depression", "degC"),
+    tkt=("cool-skin thickness", "m"),
+    Urf=("wind speed at reference height",),
+    Tfr=("temperature at reference height",),
+    Qfr=("specific humidity at reference height",),
+    RHfr=("relative humidity at reference height",),
+    UrfN=("neutral value of wind speed at reference height",),
+    Rnl=("Upwelling IR radiation computed by COARE",),
+    Le=("latent heat of vaporization",),
+    rhoa=("density of air",),
+    UN=("neutral value of wind speed at zu",),
+    U10=("wind speed adjusted to 10 m",),
+    UN10=("neutral value of wind speed at 10m",),
+    Cdn_10=("neutral value of drag coefficient at 10m",),
+    Chn_10=("neutral value of Stanton number at 10m",),
+    Cen_10=("neutral value of Dalton number at 10m",),
+)
+
 
 def output_to_xr(calc, example_da):
     names = [
@@ -52,6 +89,7 @@ def output_to_xr(calc, example_da):
     dims = example_da.dims
     for name, var in zip(names, calc):
         A[name] = (dims, var.squeeze())
+        A[name].attrs = dict(zip(["long_name", "units"], attrs[name]))
 
     for dim in example_da.dims:
         A[dim] = example_da[dim]
