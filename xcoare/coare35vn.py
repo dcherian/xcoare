@@ -1,8 +1,7 @@
 import numpy as np
 import xarray as xr
-from numpy import NaN
 from numpy import arctan as atan
-from numpy import exp, log, ones, pi, sin, sqrt
+from numpy import exp, full_like, log, ones_like, pi, sin, sqrt
 
 names = [
     "usr",
@@ -120,7 +119,6 @@ def xcoare35(
     cp=None,
     sigH=None,
     jcool=True,
-    axis=None,
 ):
 
     calc = xr.apply_ufunc(
@@ -141,7 +139,6 @@ def xcoare35(
         cp,
         sigH,
         jcool,
-        axis,
         dask="allowed",
         output_core_dims=[["variable"]],
     )
@@ -170,7 +167,6 @@ def coare35vn(
     cp=None,
     sigH=None,
     jcool=True,
-    axis=None,
 ):
     """
     Vectorized version of COARE 3 code (Fairall et al, 2003) with
@@ -315,23 +311,19 @@ def coare35vn(
     # zq = np.atleast_2d(zq)
     jcool = int(jcool)  # code expects int
 
-    if axis is None:
-        axis = np.argmax(u.shape)
-    N = u.shape[axis]
-
     # set local variables to default values if input is NaN
     # if isnan(P).all():
-    #     P = 1013 * ones((N,))
+    #     P = 1013 * ones_like(usr)
     #     # print P
 
     # # pressure
     # if isnan(Rs).all():
-    #     Rs = 150 * ones((N,))
+    #     Rs = 150 * ones_like(usr)
     #     # print Rs
 
     # # incident shortwave radiation
     # if isnan(Rl).all():
-    #     Rl = 370 * ones((N,))
+    #     Rl = 370 * ones_like(usr)
     #     # print Rl
 
     # # incident longwave radiation
@@ -348,11 +340,11 @@ def coare35vn(
     waveage = True
     seastate = True
     if cp is None:
-        cp = ones((N,)) * NaN
+        cp = full_like(u, fill_value=np.nan)
         waveage = False
 
     if sigH is None:
-        sigH = ones((N,)) * NaN
+        sigH = full_like(u, fill_value=np.nan)
         seastate = False
 
     if waveage and seastate:
@@ -437,14 +429,7 @@ def coare35vn(
     Ribu = -grav * zu / ta * ((dt - dter * jcool) + 0.61 * ta * dq) / ut ** 2
     zetu = CC * Ribu * (1 + 27 / 9 * Ribu / CC)
     k50 = zetu > 50  # stable with very thin M-O len relative to zu
-    k = Ribu < 0
-    if len(np.atleast_1d(Ribcu)) == 1:
-        zetu[k] = CC[k] * Ribu[k] / (1 + Ribu[k] / Ribcu)
-        del k
-
-    else:
-        zetu[k] = CC[k] * Ribu[k] / (1 + Ribu[k] / Ribcu[k])
-        del k
+    zetu = np.where(Ribu < 0, CC * Ribu / (1 + Ribu / Ribcu), zetu)
 
     L10 = zu / zetu
     gf = ut / du
@@ -453,14 +438,14 @@ def coare35vn(
     qsr = (
         -(dq - wetc * dter * jcool) * von * fdg / (log(zq / zot10) - psit_26(zq / L10))
     )
-    tkt = 0.001 * ones((N,))
+    tkt = 0.001 * ones_like(usr)
 
     # **********************************************************
     #  The following gives the new formulation for the
     #  Charnock variable
     # **********************************************************
 
-    charnC = 0.011 * ones((N,))
+    charnC = 0.011 * ones_like(usr)
     umax = 19
     a1 = 0.0017
     a2 = -0.0050
@@ -479,15 +464,8 @@ def coare35vn(
     zoS = sigH * Ad * (usr / cp) ** Bd
     charnS = zoS * grav / usr / usr
 
-    charn = 0.011 * ones((N,))
-    k = ut > 10
-    charn[k] = 0.011 + (ut[k] - 10) / (18 - 10) * (0.018 - 0.011)
-    del k
-
-    k = ut > 18
-    charn[k] = 0.018
-    # print charn
-    del k
+    charn = np.where(ut > 0, 0.011 + (ut - 10) / (18 - 10) * (0.018 - 0.011), 0.011)
+    charn[ut > 18] = 0.018
 
     nits = 10  # number of iterations
 
@@ -521,15 +499,8 @@ def coare35vn(
         tvsr = tsr + 0.61 * ta * qsr
         tssr = tsr + 0.51 * ta * qsr
         Bf = -grav / ta * usr * tvsr
-        ug = 0.2 * ones((N,))
-        k = Bf > 0
-        if len(np.atleast_1d(zi)) == 1:
-            ug[k] = Beta * (Bf[k] * zi) ** 0.333
-            del k
 
-        else:
-            ug[k] = Beta * (Bf[k] * zi[k]) ** 0.333
-            del k
+        ug = np.where(Bf > 0, Beta * (Bf * zi) ** 0.333, 0.2)
 
         ut = sqrt(du ** 2 + ug ** 2)
         gf = ut / du
@@ -539,30 +510,29 @@ def coare35vn(
         dels = Rns * (0.065 + 11 * tkt - 6.6e-5 / tkt * (1 - exp(-tkt / 8.0e-4)))
         qcol = qout - dels
         alq = Al * qcol + be * hlb * cpw / Le
-        xlamx = 6.0 * ones((N,))
-        tkt = np.clip(xlamx * visw / (sqrt(rhoa / rhow) * usr), a_min=None, a_max=0.01)
-        k = alq > 0
-        xlamx[k] = 6.0 / (1 + (bigc[k] * alq[k] / usr[k] ** 4) ** 0.75) ** 0.333
-        # print xlamx
+        xlamx = full_like(usr, fill_value=6.0)
+        tkt = np.clip(xlamx * visw / (sqrt(rhoa / rhow) * usr), None, 0.01)
 
-        tkt[k] = xlamx[k] * visw / (sqrt(rhoa[k] / rhow) * usr[k])
-        del k
+        xlamx = np.where(
+            alq > 0, 6.0 / (1 + (bigc * alq / usr ** 4) ** 0.75) ** 0.333, xlamx
+        )
+        tkt = np.where(alq > 0, xlamx * visw / (sqrt(rhoa / rhow) * usr), tkt)
 
         dter = qcol * tkt / tcw
         dqer = wetc * dter
         Rnl = 0.97 * (5.67e-8 * (ts - dter * jcool + tdk) ** 4 - Rl)  # update dter
         if i == 0:  # save first iteration solution for case of zetu>50;
-            usr50 = usr[k50]
-            tsr50 = tsr[k50]
+            usr50 = usr.copy()
+            tsr50 = tsr.copy()
             # print tsr50
-            qsr50 = qsr[k50]
-            L50 = L[k50]
+            qsr50 = qsr.copy()
+            L50 = L.copy()
 
-            zet50 = zet[k50]
-            dter50 = dter[k50]
+            zet50 = zet.copy()
+            dter50 = dter.copy()
             # print dter50
-            dqer50 = dqer[k50]
-            tkt50 = tkt[k50]
+            dqer50 = dqer.copy()
+            tkt50 = tkt.copy()
 
         u10N = usr / von / gf * log(10.0 / zo)
         charnC = a1 * u10N + a2
@@ -573,17 +543,15 @@ def coare35vn(
         charnS = zoS * grav / usr / usr
 
     # insert first iteration solution for case with zetu>50
-    usr[k50] = usr50
-    tsr[k50] = tsr50
-    # print tsr
-    qsr[k50] = qsr50
-    L[k50] = L50
+    usr = np.where(k50, usr50, usr)
+    tsr = np.where(k50, tsr50, tsr)
+    qsr = np.where(k50, qsr50, qsr)
+    L = np.where(k50, L50, L)
 
-    zet[k50] = zet50
-    dter[k50] = dter50
-    # print dter
-    dqer[k50] = dqer50
-    tkt[k50] = tkt50
+    zet = np.where(k50, zet50, zet)
+    dter = np.where(k50, dter50, dter)
+    dqer = np.where(k50, dqer50, dqer)
+    tkt = np.where(k50, tkt50, tkt)
 
     # ****************  compute fluxes  ********************************************
     tau = rhoa * usr * usr / gf  # wind stress
@@ -746,17 +714,17 @@ def psit_26(zet=None):
     # computes temperature structure function
     dzet = np.clip(0.35 * zet, None, 50)  # stable
     psi = -((1 + 0.6667 * zet) ** 1.5 + 0.6667 * (zet - 14.28) * exp(-dzet) + 8.525)
-    k = zet < 0  # unstable
-    x = (1 - 15 * zet[k]) ** 0.5
+
+    x = (1 - 15 * zet) ** 0.5
     psik = 2 * log((1 + x) / 2)
-    x = (1 - 34.15 * zet[k]) ** 0.3333
+    x = (1 - 34.15 * zet) ** 0.3333
     psic = (
         1.5 * log((1 + x + x ** 2) / 3)
         - sqrt(3) * atan((1 + 2 * x) / sqrt(3))
         + 4 * atan(1) / sqrt(3)
     )
-    f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
-    psi[k] = (1 - f) * psik + f * psic
+    f = zet ** 2.0 / (1 + zet ** 2)
+    psi = np.where(zet < 0, (1 - f) * psik + f * psic, psi)
     return psi
 
 
@@ -769,17 +737,18 @@ def psiu_26(zet=None):
     c = 5
     d = 0.35
     psi = -(a * zet + b * (zet - c / d) * exp(-dzet) + b * c / d)
-    k = zet < 0  # unstable
-    x = (1 - 15 * zet[k]) ** 0.25
+
+    # unstable case
+    x = (1 - 15 * zet) ** 0.25
     psik = 2 * log((1 + x) / 2) + log((1 + x * x) / 2) - 2 * atan(x) + 2 * atan(1)
-    x = (1 - 10.15 * zet[k]) ** 0.3333
+    x = (1 - 10.15 * zet) ** 0.3333
     psic = (
         1.5 * log((1 + x + x ** 2) / 3)
         - sqrt(3) * atan((1 + 2 * x) / sqrt(3))
         + 4 * atan(1) / sqrt(3)
     )
-    f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
-    psi[k] = (1 - f) * psik + f * psic
+    f = zet ** 2.0 / (1 + zet ** 2)
+    psi = np.where(zet < 0, (1 - f) * psik + f * psic, psi)
     return psi
 
 
@@ -791,17 +760,18 @@ def psiu_40(zet=None):
     c = 5
     d = 0.35
     psi = -(a * zet + b * (zet - c / d) * exp(-dzet) + b * c / d)
-    k = zet < 0  # unstable
-    x = (1 - 18 * zet[k]) ** 0.25
+
+    x = (1 - 18 * zet) ** 0.25
     psik = 2 * log((1 + x) / 2) + log((1 + x * x) / 2) - 2 * atan(x) + 2 * atan(1)
-    x = (1 - 10 * zet[k]) ** 0.3333
+
+    x = (1 - 10 * zet) ** 0.3333
     psic = (
         1.5 * log((1 + x + x ** 2) / 3)
         - sqrt(3) * atan((1 + 2 * x) / sqrt(3))
         + 4 * atan(1) / sqrt(3)
     )
-    f = zet[k] ** 2.0 / (1 + zet[k] ** 2)
-    psi[k] = (1 - f) * psik + f * psic
+    f = zet ** 2.0 / (1 + zet ** 2)
+    psi = np.where(zet < 0, (1 - f) * psik + f * psic, psi)
     return psi
 
 
