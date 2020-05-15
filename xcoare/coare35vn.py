@@ -309,7 +309,7 @@ def coare35vn(
     Q = Q / 1000
 
     # ***********  set constants **********************************************
-    zref = 10
+    # zref = 10
     Beta = 1.2
     von = 0.4
     fdg = 1.00  # Turbulent Prandtl number
@@ -320,9 +320,9 @@ def coare35vn(
     Rgas = 287.1
     Le = (2.501 - 0.00237 * ts) * 1e6
     cpa = 1004.67
-    cpv = cpa * (1 + 0.84 * Q)
+    # cpv = cpa * (1 + 0.84 * Q)
     rhoa = P * 100.0 / (Rgas * (t + tdk) * (1 + 0.61 * Q))
-    rhodry = (P - Pv) * 100.0 / (Rgas * (t + tdk))
+    # rhodry = (P - Pv) * 100.0 / (Rgas * (t + tdk))
     visa = 1.326e-5 * (1 + 6.542e-3 * t + 8.301e-6 * t ** 2 - 4.84e-9 * t ** 3)
 
     # ***********  cool skin constants  ***************************************
@@ -568,22 +568,22 @@ def coare35vn(
     U10N = U10 + psi10 * usr / von / gf
     UrfN = Urf + psirf * usr / von / gf
 
-    UN2 = usr / von / gf * log(zu / zo)
-    U10N2 = usr / von / gf * log(10.0 / zo)
-    UrfN2 = usr / von / gf * log(zrf_u / zo)
+    # UN2 = usr / von / gf * log(zu / zo)
+    # U10N2 = usr / von / gf * log(10.0 / zo)
+    # UrfN2 = usr / von / gf * log(zrf_u / zo)
 
     # ******** rain heat flux (save to use if desired) *****************************
     if rain is None:
         RF = zeros(usr.shape)
     else:
-        dwat = 2.11e-5 * ((t + tdk) / tdk) ** 1.94  #! water vapour diffusivity
+        dwat = 2.11e-5 * ((t + tdk) / tdk) ** 1.94  # water vapour diffusivity
         dtmp = (
             (1.0 + 3.309e-3 * t - 1.44e-6 * t * t) * 0.02411 / (rhoa * cpa)
-        )  #! heat diffusivity
-        dqs_dt = Q * Le / (Rgas * (t + tdk) ** 2)  #! Clausius-Clapeyron
+        )  # heat diffusivity
+        dqs_dt = Q * Le / (Rgas * (t + tdk) ** 2)  # Clausius-Clapeyron
         alfac = 1.0 / (
             1 + 0.622 * (dqs_dt * Le * dwat) / (cpa * dtmp)
-        )  #! wet bulb factor
+        )  # wet bulb factor
         RF = (
             rain
             * alfac
@@ -593,19 +593,19 @@ def coare35vn(
         )
 
     lapse = grav / cpa
-    SST = ts - dter * jcool
+    # SST = ts - dter * jcool
 
     T = t
     # [size(-psi10T+psiT + lapse*(zt-10))]
     T10 = T + tsr / von * (log(10.0 / zt) - psi10T + psiT) + lapse * (zt - 10)
     Trf = T + tsr / von * (log(zrf_t / zt) - psirfT + psiT) + lapse * (zt - zrf_t)
-    TN = T + psiT * tsr / von
-    T10N = T10 + psi10T * tsr / von
-    TrfN = Trf + psirfT * tsr / von
+    # TN = T + psiT * tsr / von
+    # T10N = T10 + psi10T * tsr / von
+    # TrfN = Trf + psirfT * tsr / von
 
-    TN2 = SST + tsr / von * log(zt / zot) - lapse * zt
-    T10N2 = SST + tsr / von * log(10.0 / zot) - lapse * 10
-    TrfN2 = SST + tsr / von * log(zrf_t / zot) - lapse * zrf_t
+    # TN2 = SST + tsr / von * log(zt / zot) - lapse * zt
+    # T10N2 = SST + tsr / von * log(10.0 / zot) - lapse * 10
+    # TrfN2 = SST + tsr / von * log(zrf_t / zot) - lapse * zrf_t
 
     dqer = wetc * dter * jcool
     SSQ = Qs - dqer
@@ -614,13 +614,13 @@ def coare35vn(
     qsr = qsr * 1000
     Q10 = Q + qsr / von * (log(10.0 / zq) - psi10T + psiT)
     Qrf = Q + qsr / von * (log(zrf_q / zq) - psirfQ + psiT)
-    QN = Q + psiT * qsr / von / sqrt(gf)
-    Q10N = Q10 + psi10T * qsr / von
-    QrfN = Qrf + psirfQ * qsr / von
+    # QN = Q + psiT * qsr / von / sqrt(gf)
+    # Q10N = Q10 + psi10T * qsr / von
+    # QrfN = Qrf + psirfQ * qsr / von
 
-    QN2 = SSQ + qsr / von * log(zq / zoq)
-    Q10N2 = SSQ + qsr / von * log(10.0 / zoq)
-    QrfN2 = SSQ + qsr / von * log(zrf_q / zoq)
+    # QN2 = SSQ + qsr / von * log(zq / zoq)
+    # Q10N2 = SSQ + qsr / von * log(10.0 / zoq)
+    # QrfN2 = SSQ + qsr / von * log(zrf_q / zoq)
     RHrf = RHcalc(Trf, P, Qrf / 1000)
     RH10 = RHcalc(T10, P, Q10 / 1000)
 
