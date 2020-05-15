@@ -4,6 +4,48 @@ from numpy import NaN
 from numpy import arctan as atan
 from numpy import exp, isnan, log, ones, pi, sin, sqrt
 
+names = [
+    "usr",
+    "tau",
+    "hsb",
+    "hlb",
+    "hbb",
+    "hsbb",
+    "hlwebb",
+    "tsr",
+    "qsr",
+    "zot",
+    "zoq",
+    "Cd",
+    "Ch",
+    "Ce",
+    "L",
+    "zet",
+    "dter",
+    "dqer",
+    "tkt",
+    "Urf",
+    "Trf",
+    "Qrf",
+    "RHrf",
+    "UrfN",
+    "Rnl",
+    "Le",
+    "rhoa",
+    "UN",
+    "U10",
+    "U10N",
+    "Cdn_10",
+    "Chn_10",
+    "Cen_10",
+    "RF",
+    "Qs",
+    "Evap",
+    "T10",
+    "Q10",
+    "RH10",
+]
+
 # hlwebb: add this to directly measured eddy covariance latent heat flux using water vapor mass concentration sensors.
 attrs = dict(
     usr=("friction velocity that includes gustiness", "m/s"),
@@ -50,48 +92,6 @@ attrs = dict(
 
 
 def output_to_xr(calc, example_da):
-    names = [
-        "usr",
-        "tau",
-        "hsb",
-        "hlb",
-        "hbb",
-        "hsbb",
-        "hlwebb",
-        "tsr",
-        "qsr",
-        "zot",
-        "zoq",
-        "Cd",
-        "Ch",
-        "Ce",
-        "L",
-        "zet",
-        "dter",
-        "dqer",
-        "tkt",
-        "Urf",
-        "Trf",
-        "Qrf",
-        "RHrf",
-        "UrfN",
-        "Rnl",
-        "Le",
-        "rhoa",
-        "UN",
-        "U10",
-        "U10N",
-        "Cdn_10",
-        "Chn_10",
-        "Cen_10",
-        "RF",
-        "Qs",
-        "Evap",
-        "T10",
-        "Q10",
-        "RH10",
-    ]
-
     A = xr.Dataset()
     dims = example_da.dims
     for name, var in zip(names, calc):
@@ -123,11 +123,34 @@ def xcoare35(
     axis=None,
 ):
 
-    calc = coare35vn(
-        u, zu, t, zt, rh, zq, P, ts, Rs, Rl, lat, zi, rain, cp, sigH, jcool, axis
+    calc = xr.apply_ufunc(
+        coare35vn,
+        u,
+        zu,
+        t,
+        zt,
+        rh,
+        zq,
+        P,
+        ts,
+        Rs,
+        Rl,
+        lat,
+        zi,
+        rain,
+        cp,
+        sigH,
+        jcool,
+        axis,
+        dask="allowed",
+        output_core_dims=[["variable"]],
     )
 
-    return output_to_xr(calc, u)
+    calc["variable"] = names
+    ds = calc.to_dataset(dim="variable")
+    for name in ds:
+        ds[name].attrs = dict(zip(["long_name", "units"], attrs[name]))
+    return ds
 
 
 def coare35vn(
@@ -671,47 +694,50 @@ def coare35vn(
 
     # ****************  output  ****************************************************
 
-    return [
-        usr,
-        tau,
-        hsb,
-        hlb,
-        hbb,
-        hsbb,
-        hlwebb,
-        tsr,
-        qsr,
-        zot,
-        zoq,
-        Cd,
-        Ch,
-        Ce,
-        L,
-        zet,
-        dter,
-        dqer,
-        tkt,
-        Urf,
-        Trf,
-        Qrf,
-        RHrf,
-        UrfN,
-        Rnl,
-        Le,
-        rhoa,
-        UN,
-        U10,
-        U10N,
-        Cdn_10,
-        Chn_10,
-        Cen_10,
-        RF,
-        Qs,
-        Evap,
-        T10,
-        Q10,
-        RH10,
-    ]
+    return np.stack(
+        [
+            usr,
+            tau,
+            hsb,
+            hlb,
+            hbb,
+            hsbb,
+            hlwebb,
+            tsr,
+            qsr,
+            zot,
+            zoq,
+            Cd,
+            Ch,
+            Ce,
+            L,
+            zet,
+            dter,
+            dqer,
+            tkt,
+            Urf,
+            Trf,
+            Qrf,
+            RHrf,
+            UrfN,
+            Rnl,
+            Le,
+            rhoa,
+            UN,
+            U10,
+            U10N,
+            Cdn_10,
+            Chn_10,
+            Cen_10,
+            RF,
+            Qs,
+            Evap,
+            T10,
+            Q10,
+            RH10,
+        ],
+        axis=-1,
+    )
 
     # #   1   2   3   4   5   6    7      8   9  10  11  12 13 14 15 16   17   18   19  20  21  22  23   24   25 26  27  28  29  30    31     32     33   34 35  36  37  38   39
 
