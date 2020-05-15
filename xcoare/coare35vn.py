@@ -436,8 +436,8 @@ def coare35vn(
     Ribcu = -zu / zi / 0.004 / Beta ** 3
     Ribu = -grav * zu / ta * ((dt - dter * jcool) + 0.61 * ta * dq) / ut ** 2
     zetu = CC * Ribu * (1 + 27 / 9 * Ribu / CC)
-    k50 = np.nonzero(zetu > 50)  # stable with very thin M-O len relative to zu
-    k = np.nonzero(Ribu < 0)
+    k50 = zetu > 50  # stable with very thin M-O len relative to zu
+    k = Ribu < 0
     if len(np.atleast_1d(Ribcu)) == 1:
         zetu[k] = CC[k] * Ribu[k] / (1 + Ribu[k] / Ribcu)
         del k
@@ -465,7 +465,7 @@ def coare35vn(
     a1 = 0.0017
     a2 = -0.0050
     charnC = a1 * u10 + a2
-    k = np.nonzero(u10 > umax)
+    k = u10 > umax
     charnC[k] = a1 * umax + a2
 
     A = 0.114  # wave-age depent coefficients
@@ -480,11 +480,11 @@ def coare35vn(
     charnS = zoS * grav / usr / usr
 
     charn = 0.011 * ones((N,))
-    k = np.nonzero(ut > 10)
+    k = ut > 10
     charn[k] = 0.011 + (ut[k] - 10) / (18 - 10) * (0.018 - 0.011)
     del k
 
-    k = np.nonzero(ut > 18)
+    k = ut > 18
     charn[k] = 0.018
     # print charn
     del k
@@ -522,7 +522,7 @@ def coare35vn(
         tssr = tsr + 0.51 * ta * qsr
         Bf = -grav / ta * usr * tvsr
         ug = 0.2 * ones((N,))
-        k = np.nonzero(Bf > 0)
+        k = Bf > 0
         if len(np.atleast_1d(zi)) == 1:
             ug[k] = Beta * (Bf[k] * zi) ** 0.333
             del k
@@ -541,7 +541,7 @@ def coare35vn(
         alq = Al * qcol + be * hlb * cpw / Le
         xlamx = 6.0 * ones((N,))
         tkt = np.clip(xlamx * visw / (sqrt(rhoa / rhow) * usr), a_min=None, a_max=0.01)
-        k = np.nonzero(alq > 0)
+        k = alq > 0
         xlamx[k] = 6.0 / (1 + (bigc[k] * alq[k] / usr[k] ** 4) ** 0.75) ** 0.333
         # print xlamx
 
@@ -566,7 +566,7 @@ def coare35vn(
 
         u10N = usr / von / gf * log(10.0 / zo)
         charnC = a1 * u10N + a2
-        k = np.nonzero(u10N > umax)
+        k = u10N > umax
         charnC[k] = a1 * umax + a2
         charnW = A * (usr / cp) ** B
         zoS = sigH * Ad * (usr / cp) ** Bd  # -0.11*visa./usr;
@@ -606,7 +606,7 @@ def coare35vn(
     Cen_10 = 1000 * von ** 2.0 * fdg / log(10.0 / zo) / log(10.0 / zoq)
 
     # ***  compute 10-m neutral coeff relative to ut (output if needed) ************
-    #  Np.Nonzero the stability functions
+    #   the stability functions
     # *********************************
     zrf_u = 10  # User defined reference heights
     zrf_t = 10
@@ -746,7 +746,7 @@ def psit_26(zet=None):
     # computes temperature structure function
     dzet = np.clip(0.35 * zet, a_min=None, a_max=50)  # stable
     psi = -((1 + 0.6667 * zet) ** 1.5 + 0.6667 * (zet - 14.28) * exp(-dzet) + 8.525)
-    k = np.nonzero(zet < 0)  # unstable
+    k = zet < 0  # unstable
     x = (1 - 15 * zet[k]) ** 0.5
     psik = 2 * log((1 + x) / 2)
     x = (1 - 34.15 * zet[k]) ** 0.3333
@@ -769,7 +769,7 @@ def psiu_26(zet=None):
     c = 5
     d = 0.35
     psi = -(a * zet + b * (zet - c / d) * exp(-dzet) + b * c / d)
-    k = np.nonzero(zet < 0)  # unstable
+    k = zet < 0  # unstable
     x = (1 - 15 * zet[k]) ** 0.25
     psik = 2 * log((1 + x) / 2) + log((1 + x * x) / 2) - 2 * atan(x) + 2 * atan(1)
     x = (1 - 10.15 * zet[k]) ** 0.3333
@@ -791,7 +791,7 @@ def psiu_40(zet=None):
     c = 5
     d = 0.35
     psi = -(a * zet + b * (zet - c / d) * exp(-dzet) + b * c / d)
-    k = np.nonzero(zet < 0)  # unstable
+    k = zet < 0  # unstable
     x = (1 - 18 * zet[k]) ** 0.25
     psik = 2 * log((1 + x) / 2) + log((1 + x * x) / 2) - 2 * atan(x) + 2 * atan(1)
     x = (1 - 10 * zet[k]) ** 0.3333
