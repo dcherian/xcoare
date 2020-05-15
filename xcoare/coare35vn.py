@@ -296,23 +296,23 @@ def coare35vn(
 
     # convert input to column vectors
 
-    u = np.atleast_2d(u)
-    t = np.atleast_2d(t)
-    # print t
-    rh = np.atleast_2d(rh)
-    P = np.atleast_2d(P)
-    ts = np.atleast_2d(ts)
+    # u = np.atleast_2d(u)
+    # t = np.atleast_2d(t)
+    # # print t
+    # rh = np.atleast_2d(rh)
+    # P = np.atleast_2d(P)
+    # ts = np.atleast_2d(ts)
 
-    Rs = np.atleast_2d(Rs)
-    Rl = np.atleast_2d(Rl)
-    # print Rl
-    lat = np.atleast_2d(lat)
-    zi = np.atleast_2d(zi)
+    # Rs = np.atleast_2d(Rs)
+    # Rl = np.atleast_2d(Rl)
+    # # print Rl
+    # lat = np.atleast_2d(lat)
+    # zi = np.atleast_2d(zi)
 
-    zu = np.atleast_2d(zu)
-    zt = np.atleast_2d(zt)
-    # print zt
-    zq = np.atleast_2d(zq)
+    # zu = np.atleast_2d(zu)
+    # zt = np.atleast_2d(zt)
+    # # print zt
+    # zq = np.atleast_2d(zq)
     jcool = int(jcool)  # code expects int
 
     if axis is None:
@@ -320,18 +320,18 @@ def coare35vn(
     N = u.shape[axis]
 
     # set local variables to default values if input is NaN
-    if isnan(P).all():
-        P = 1013 * ones((1, N))
-        # print P
+    # if isnan(P).all():
+    #     P = 1013 * ones((N,))
+    #     # print P
 
     # # pressure
     # if isnan(Rs).all():
-    #     Rs = 150 * ones((1, N))
+    #     Rs = 150 * ones((N,))
     #     # print Rs
 
     # # incident shortwave radiation
     # if isnan(Rl).all():
-    #     Rl = 370 * ones((1, N))
+    #     Rl = 370 * ones((N,))
     #     # print Rl
 
     # # incident longwave radiation
@@ -348,11 +348,11 @@ def coare35vn(
     waveage = True
     seastate = True
     if cp is None:
-        cp = ones((1, N)) * NaN
+        cp = ones((N,)) * NaN
         waveage = False
 
     if sigH is None:
-        sigH = ones((1, N)) * NaN
+        sigH = ones((N,)) * NaN
         seastate = False
 
     if waveage and seastate:
@@ -361,9 +361,9 @@ def coare35vn(
     if waveage and not seastate:
         print("Using waveage depent parameterization")
 
-    cp = np.atleast_2d(cp)
-    sigH = np.atleast_2d(sigH)
-    rain = np.atleast_2d(rain)
+    # cp = np.atleast_2d(cp)
+    # sigH = np.atleast_2d(sigH)
+    # rain = np.atleast_2d(rain)
 
     # input variable u is assumed relative wind speed (magnitude of difference
     # between wind and surface current vectors). to follow orginal Fairall code, set
@@ -438,7 +438,7 @@ def coare35vn(
     zetu = CC * Ribu * (1 + 27 / 9 * Ribu / CC)
     k50 = np.nonzero(zetu > 50)  # stable with very thin M-O len relative to zu
     k = np.nonzero(Ribu < 0)
-    if len(Ribcu) == 1:
+    if len(np.atleast_1d(Ribcu)) == 1:
         zetu[k] = CC[k] * Ribu[k] / (1 + Ribu[k] / Ribcu)
         del k
 
@@ -453,14 +453,14 @@ def coare35vn(
     qsr = (
         -(dq - wetc * dter * jcool) * von * fdg / (log(zq / zot10) - psit_26(zq / L10))
     )
-    tkt = 0.001 * ones((1, N))
+    tkt = 0.001 * ones((N,))
 
     # **********************************************************
     #  The following gives the new formulation for the
     #  Charnock variable
     # **********************************************************
 
-    charnC = 0.011 * ones((1, N))
+    charnC = 0.011 * ones((N,))
     umax = 19
     a1 = 0.0017
     a2 = -0.0050
@@ -479,7 +479,7 @@ def coare35vn(
     zoS = sigH * Ad * (usr / cp) ** Bd
     charnS = zoS * grav / usr / usr
 
-    charn = 0.011 * ones((1, N))
+    charn = 0.011 * ones((N,))
     k = np.nonzero(ut > 10)
     charn[k] = 0.011 + (ut[k] - 10) / (18 - 10) * (0.018 - 0.011)
     del k
@@ -521,9 +521,9 @@ def coare35vn(
         tvsr = tsr + 0.61 * ta * qsr
         tssr = tsr + 0.51 * ta * qsr
         Bf = -grav / ta * usr * tvsr
-        ug = 0.2 * ones((1, N))
+        ug = 0.2 * ones((N,))
         k = np.nonzero(Bf > 0)
-        if len(zi) == 1:
+        if len(np.atleast_1d(zi)) == 1:
             ug[k] = Beta * (Bf[k] * zi) ** 0.333
             del k
 
@@ -539,7 +539,7 @@ def coare35vn(
         dels = Rns * (0.065 + 11 * tkt - 6.6e-5 / tkt * (1 - exp(-tkt / 8.0e-4)))
         qcol = qout - dels
         alq = Al * qcol + be * hlb * cpw / Le
-        xlamx = 6.0 * ones((1, N))
+        xlamx = 6.0 * ones((N,))
         tkt = np.clip(xlamx * visw / (sqrt(rhoa / rhow) * usr), a_min=None, a_max=0.01)
         k = np.nonzero(alq > 0)
         xlamx[k] = 6.0 / (1 + (bigc[k] * alq[k] / usr[k] ** 4) ** 0.75) ** 0.333
