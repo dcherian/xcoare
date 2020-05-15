@@ -850,3 +850,6 @@ def RHcalc(T=None, P=None, Q=None):
     em = Q * P / (0.378 * Q + 0.622)
     RHrf = 100 * em / es
     return RHrf
+
+
+xcoare35.__doc__ = coare35vn.__doc__
