@@ -1,4 +1,5 @@
 # from scipy.io import loadmat
+import pytest
 import xarray as xr
 
 from ..coare35vn import xcoare35
@@ -16,12 +17,18 @@ from ..coare35vn import xcoare35
 #     revds[var] = (("yday",), rev[var])
 
 
-def test_35():
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_35(use_dask):
     revds = xr.open_dataset("xcoare/tests/Revelle10minutesLeg3_r3.nc")
     expected = xr.open_dataset("xcoare/tests/expected_revelle_35.nc")
 
+    if use_dask:
+        U = revds["U10"].chunk()
+    else:
+        U = revds["U10"]
+
     actual = xcoare35(
-        revds["U10"],
+        U,
         10,
         revds["T10"],
         10,
