@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: "*"
   pull_request:
     branches: master
 
@@ -12,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
@@ -29,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
@@ -46,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
@@ -63,24 +61,44 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8]
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: goanpeca/setup-miniconda@v1
         with:
-          auto-update-conda: true
+          activate-environment: xcoare-test
+          auto-update-conda: false
+          auto-activate-base: false
+          channels: conda-forge
+          allow-softlinks: true
+          channel-priority: strict
+          environment-file: ci/environment.yaml
+          show-channel-urls: true
+          use-only-tar-bz2: true
           python-version: ${{ matrix.python-version }}
-      - name: Create environment
+
+      - name: Environment
+        shell: bash -l {0}
+        run: printenv | sort
+
+      - name: Install package
         shell: bash -l {0}
         run: |
-          conda env create -f ci/python-36.yml
           python -m pip install --no-deps -e .
+
       - name: Conda info
+        shell: bash -l {0}
         run: |
           conda info
           conda list
+
       - name: Running Tests
+        shell: bash -l {0}
         run: |
           python -m pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
