@@ -1,6 +1,6 @@
 xcoare: COARE bulk flux algorithms for xarray objects
 -----------------------------------------------------
-.. image:: https://img.shields.io/github/workflow/status/dcherian/xcoare/code-style?label=Code%20Style&style=for-the-badge
+.. image::https://github.com/dcherian/xcoare/workflows/CI/badge.svg?branch=master
     :target: https://github.com/dcherian/xcoare/actions
     :alt: GitHub Workflow Status
 
