@@ -1,0 +1,8 @@
+name: xcoare-doc
+channels:
+  - conda-forge
+dependencies:
+  - netcdf4
+  - xarray
+  - pydata-sphinx-theme
+  - sphinx
