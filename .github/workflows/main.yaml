@@ -65,15 +65,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Cache conda
-        uses: actions/cache@v1
-        env:
-          # Increase this value to reset cache if etc/example-environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/python-36.yml') }}
-      - uses: goanpeca/setup-miniconda@check-cache
+      - uses: goanpeca/setup-miniconda@v1
         with:
           auto-update-conda: true
           activate-environment: xcoare-test
