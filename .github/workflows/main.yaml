@@ -66,12 +66,16 @@ jobs:
       - uses: goanpeca/setup-miniconda@v1
         with:
           auto-update-conda: true
+          activate-environment: xcoare-test
+          environment-file: ci/python-36.yml
+          allow-softlinks: true
+          channel-priority: strict
+          show-channel-urls: true
+          use-only-tar-bz2: true
           python-version: ${{ matrix.python-version }}
-      - name: Create environment
+      - name: Install package
         shell: bash -l {0}
         run: |
-          echo `ls`
-          conda env create -f ci/python-36.yaml
           python -m pip install --no-deps -e .
       - name: Conda info
         run: |
