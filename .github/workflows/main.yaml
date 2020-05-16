@@ -63,12 +63,13 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8]
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
         with:
           auto-update-conda: true
           activate-environment: xcoare-test
-          environment-file: ../ci/python-36.yaml
+          environment-file: ci/python-36.yaml
           allow-softlinks: true
           channel-priority: strict
           show-channel-urls: true
