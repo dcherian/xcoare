@@ -70,6 +70,7 @@ jobs:
       - name: Create environment
         shell: bash -l {0}
         run: |
+          ls
           conda env create -f ../ci/python-36.yaml
           python -m pip install --no-deps -e ../
       - name: Conda info
