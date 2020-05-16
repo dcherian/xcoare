@@ -86,10 +86,12 @@ jobs:
           conda install -c conda-forge xarray pytest dask python=${{ matrix.python-version }}
           python -m pip install --no-deps -e .
       - name: Conda info
+        shell: bash -l {0}
         run: |
           conda info
           conda list
       - name: Running Tests
+        shell: bash -l {0}
         run: |
           python -m pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
       - name: Upload coverage to Codecov
