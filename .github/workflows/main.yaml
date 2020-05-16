@@ -70,6 +70,7 @@ jobs:
           auto-update-conda: true
           activate-environment: xcoare-test
           environment-file: ci/python-36.yaml
+          channels: conda-forge
           allow-softlinks: true
           channel-priority: strict
           show-channel-urls: true
