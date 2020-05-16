@@ -73,7 +73,7 @@ jobs:
           channels: conda-forge
           allow-softlinks: true
           channel-priority: strict
-          environment-file: ci/python-36.yaml
+          # environment-file: ci/python-36.yaml
           show-channel-urls: true
           use-only-tar-bz2: true
           python-version: ${{ matrix.python-version }}
@@ -83,6 +83,7 @@ jobs:
       - name: Install package
         shell: bash -l {0}
         run: |
+          conda install python=${{ matrix.python-version }} -c conda-forge xarray pytest dask
           python -m pip install --no-deps -e .
       - name: Conda info
         run: |
