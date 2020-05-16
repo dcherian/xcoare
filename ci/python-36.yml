@@ -2,9 +2,5 @@ name: xcoare
 channels:
   - conda-forge
 dependencies:
-  - black
-  - flake8
-  - isort
-  - numpy
-  - pandas
+  - dask
   - xarray

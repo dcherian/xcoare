@@ -65,22 +65,19 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8]
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v1
+      - uses: goanpeca/setup-miniconda@v1
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - uses: actions/cache@v1
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/dev-requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - run: |
-          python -m pip install -r dev-requirements.txt
+      - name: Create environment
+        shell: bash -l {0}
+        run: |
+          conda env create -f ci/python-36.yml
           python -m pip install --no-deps -e .
-          python -m pip list
+      - name: Conda info
+        run: |
+          conda info
+          conda list
       - name: Running Tests
         run: |
           python -m pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
