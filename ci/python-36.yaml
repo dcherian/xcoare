@@ -3,5 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - dask
+  - pytest-cov
   - pytest
   - xarray
