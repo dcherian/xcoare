@@ -72,12 +72,15 @@ jobs:
       - name: Create environment
         shell: bash -l {0}
         run: |
-          conda env create -f ci/python-36.yml
-          python -m pip install --no-deps -e .
+          conda env create -f ../ci/python-36.yml
+          python -m pip install --no-deps -e ../
       - name: Conda info
         run: |
           conda info
           conda list
+      - name: Environment
+        shell: bash -l {0}
+        run: printenv | sort
       - name: Running Tests
         run: |
           python -m pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
