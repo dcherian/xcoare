@@ -2,6 +2,7 @@ name: xcoare-doc
 channels:
   - conda-forge
 dependencies:
+  - python
   - netcdf4
   - xarray
   - pydata-sphinx-theme
