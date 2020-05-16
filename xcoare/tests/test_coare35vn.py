@@ -3,6 +3,7 @@ import pytest
 import xarray as xr
 
 from ..coare35vn import xcoare35
+from . import raise_if_dask_computes
 
 # rev = loadmat("/home/deepak/work/coare3_6/Revelle10minutesLeg3_r3.mat", squeeze_me=True)
 # mat = loadmat("/home/deepak/work/coare3_6/revelle_35.mat", squeeze_me=True)['A35']
@@ -27,21 +28,25 @@ def test_35(use_dask):
     else:
         U = revds["U10"]
 
-    actual = xcoare35(
-        U,
-        10,
-        revds["T10"],
-        10,
-        revds["RH10"],
-        10,
-        revds["Pair10"],
-        revds["Tsea5"],
-        -revds["Solardn"],
-        -revds["IRdn"],
-        revds["Lat"],
-        600,
-        revds["P"],
-    )
+    with raise_if_dask_computes():
+        actual = xcoare35(
+            U,
+            10,
+            revds["T10"],
+            10,
+            revds["RH10"],
+            10,
+            revds["Pair10"],
+            revds["Tsea5"],
+            -revds["Solardn"],
+            -revds["IRdn"],
+            revds["Lat"],
+            600,
+            revds["P"],
+        )
+
+    if use_dask:
+        assert actual["usr"].chunks == U.chunks
 
     # import matplotlib.pyplot as plt
     # # %matplotlib qt
