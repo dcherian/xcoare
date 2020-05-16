@@ -67,12 +67,13 @@ jobs:
         uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
         with:
-          auto-update-conda: false
           activate-environment: xcoare-test
-          environment-file: ci/python-36.yaml
+          auto-update-conda: false
+          auto-activate-base: false
           channels: conda-forge
           allow-softlinks: true
           channel-priority: strict
+          environment-file: ci/python-36.yaml
           show-channel-urls: true
           use-only-tar-bz2: true
           python-version: ${{ matrix.python-version }}
@@ -89,7 +90,6 @@ jobs:
           conda list
       - name: Running Tests
         run: |
-          conda activate xcoare-test
           python -m pytest --junitxml=test-reports/junit.xml --cov=./ --verbose
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
