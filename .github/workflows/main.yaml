@@ -83,7 +83,7 @@ jobs:
       - name: Install package
         shell: bash -l {0}
         run: |
-          conda install python=${{ matrix.python-version }} -c conda-forge xarray pytest dask
+          conda install -c conda-forge xarray pytest dask python=${{ matrix.python-version }}
           python -m pip install --no-deps -e .
       - name: Conda info
         run: |
