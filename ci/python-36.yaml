@@ -1,4 +1,4 @@
-name: xcoare
+name: xcoare-test
 channels:
   - conda-forge
 dependencies:
