@@ -119,6 +119,7 @@ def xcoare35(
     cp=None,
     sigH=None,
     jcool=True,
+    qspec=None,
 ):
 
     calc = xr.apply_ufunc(
@@ -139,6 +140,7 @@ def xcoare35(
         cp,
         sigH,
         jcool,
+        qspec,
         dask="allowed",
         output_core_dims=[["variable"]],
     )
@@ -167,6 +169,7 @@ def coare35vn(
     cp=None,
     sigH=None,
     jcool=True,
+    qspec=None,
 ):
     """
     Vectorized version of COARE 3 code (Fairall et al, 2003) with
@@ -207,7 +210,7 @@ def coare35vn(
      rain = rain rate (mm/hr)
        cp = phase speed of dominant waves (m/s)
      sigH =  significant wave height (m)
-
+    qspec =  specific humidity at zq (kg/kg)
     The user controls the output.  This is currently set as:
 
     Output
@@ -363,10 +366,13 @@ def coare35vn(
     # using this code.
     us = 0 * u
 
-    # convert rh to specific humidity
     Qs = qsat26sea(ts, P) / 1000  # surface water specific humidity (g/kg)
+    if rh is None and qspec is not None:
+        rh = RHcalc(t, P, Q=qspec)
+        # print(rh)
+    # convert rh to specific humidity
     Q, _ = qsat26air(t, P, rh)  # specific humidity of air (g/kg)
-    Q = Q / 1000
+    Q = Q / 1000  # kg/kg
 
     # ***********  set constants **********************************************
     # zref = 10
@@ -813,7 +819,10 @@ def grv(lat=None):
     return g
 
 
-def RHcalc(T=None, P=None, Q=None):
+def RHcalc(T, P, Q):
+    # T : degC
+    # P : mbar
+    # Q : kg/kg
     # computes relative humidity given T,P, & Q
 
     es = 6.1121 * exp(17.502 * T / (T + 240.97)) * (1.0007 + 3.46e-6 * P)
