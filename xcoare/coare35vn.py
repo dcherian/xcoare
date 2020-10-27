@@ -120,6 +120,8 @@ def xcoare35(
     sigH=None,
     jcool=True,
     qspec=None,
+    albedo=0.055,
+    emissivity=0.97,
 ):
 
     calc = xr.apply_ufunc(
@@ -141,6 +143,8 @@ def xcoare35(
         sigH,
         jcool,
         qspec,
+        albedo,
+        emissivity,
         dask="allowed",
         output_core_dims=[["variable"]],
     )
@@ -170,6 +174,8 @@ def coare35vn(
     sigH=None,
     jcool=True,
     qspec=None,
+    albedo=0.055,
+    emissivity=0.97,
 ):
     """
     Vectorized version of COARE 3 code (Fairall et al, 2003) with
@@ -384,10 +390,11 @@ def coare35vn(
 
     # ***********  air constants **********************************************
     Rgas = 287.1
-    Le = (2.501 - 0.00237 * ts) * 1e6
-    cpa = 1004.67
+    Le = 2.5e6 * np.ones_like(ts)  # (2.501 - 0.00237 * ts) * 1e6
+    cpa = 1005  # 1004.67
     # cpv = cpa * (1 + 0.84 * Q)
-    rhoa = P * 100.0 / (Rgas * (t + tdk) * (1 + 0.61 * Q))
+    rhoa = 1.2 * np.ones_like(P)  # P * 100.0 / (Rgas * (t + tdk) * (1 + 0.61 * Q))
+    # rhoa = P * 100.0 / (Rgas * (t + tdk) * (1 + 0.61 * Q))
     # rhodry = (P - Pv) * 100.0 / (Rgas * (t + tdk))
     visa = 1.326e-5 * (1 + 6.542e-3 * t + 8.301e-6 * t ** 2 - 4.84e-9 * t ** 3)
 
@@ -402,12 +409,12 @@ def coare35vn(
     wetc = 0.622 * Le * Qs / (Rgas * (ts + tdk) ** 2)
 
     # ***********  net radiation fluxes ***************************************
-    Rns = 0.945 * Rs  # albedo correction
+    Rns = (1 - albedo) * Rs  # albedo correction
     # IRup = eps*sigma*T^4 + (1-eps)*IR
     # Rnl = IRup - IR
     # Rnl = eps*sigma*T^4 - eps*IR  as below
 
-    Rnl = 0.97 * (5.67e-8 * (ts - 0.3 * jcool + tdk) ** 4 - Rl)  # initial value
+    Rnl = emissivity * (5.67e-8 * (ts - 0.3 * jcool + tdk) ** 4 - Rl)  # initial value
 
     # IRup = Rnl + IR
 
@@ -526,7 +533,7 @@ def coare35vn(
 
         dter = qcol * tkt / tcw
         dqer = wetc * dter
-        Rnl = 0.97 * (5.67e-8 * (ts - dter * jcool + tdk) ** 4 - Rl)  # update dter
+        Rnl = emissivity * 5.67e-8 * (ts - dter * jcool + tdk) ** 4 - Rl  # update dter
         if i == 0:  # save first iteration solution for case of zetu>50;
             usr50 = usr.copy()
             tsr50 = tsr.copy()
